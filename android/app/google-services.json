@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "816383691793",
+    "project_id": "cheesus-2d4e7",
+    "storage_bucket": "cheesus-2d4e7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816383691793:android:8a73f5b5e05a48db2335b0",
+        "android_client_info": {
+          "package_name": "com.derdu.cheesus"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "816383691793-p4ghi8sbphk08tctn232kbrkrsc6vjhp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyU-focUPhFMougowcYnC93r2SBw6Z78w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "816383691793-dq1tup6iiuaeo687lt6rushdu66uc42d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "816383691793-pglq97kkp9718pfpf9820kr8dldsla8k.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.derdu.cheesus"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
