@@ -7,6 +7,7 @@ import 'package:cheesus/CHFavoriteBtn.dart';
 import 'package:cheesus/CHIconButton.dart';
 import 'package:cheesus/ChatRoute.dart';
 import 'package:cheesus/HistoryRoute.dart';
+import 'package:cheesus/ProfileRoute.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -39,8 +40,8 @@ class MyApp extends StatelessWidget {
         // or simply save your changes to "hot reload" in a Flutter IDE).
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
-        primarySwatch: generateMaterialColor(Color.fromRGBO(255, 201, 3, 1.0)),
-          appBarTheme: AppBarTheme(backgroundColor: Color.fromRGBO(255, 201, 3, 1.0), centerTitle: true),
+        primarySwatch: generateMaterialColor(const Color.fromRGBO(255, 201, 3, 1.0)),
+          appBarTheme: const AppBarTheme(backgroundColor: Color.fromRGBO(255, 201, 3, 1.0), centerTitle: true),
         useMaterial3: true,
         fontFamily: "Karla"
       ),
@@ -101,20 +102,38 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final Future<List<Map<String,dynamic>>> _textLoaded = FirebaseFirestore.instance.collection("lena").where("date-published", isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))).get().then(
-        (event) {
-          List<Map<String, dynamic>> docs = [];
-      for(var doc in event.docs){
-        Map<String, dynamic> extDoc = {
-          ...doc.data(),
-          ...{"_id": doc.id}
-        };
-        docs.add(extDoc);
-      }
-      return docs;
-    },
-    onError: (e) => print("Error getting document: $e"),
-  );
+  late Future<List<List<Map<String,dynamic>>>> _textLoaded;
+
+  _MyHomePageState(){
+    _textLoaded = FirebaseFirestore.instance.collection("lena").where("date-published", isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))).get().then(
+          (event) {
+        List<List<Map<String, dynamic>>> data = [];
+        List<Map<String, dynamic>> docs = [];
+        for(var doc in event.docs){
+          Map<String, dynamic> extDoc = {
+            ...doc.data(),
+            ...{"_id": doc.id}
+          };
+          docs.add(extDoc);
+        }
+        if(docs.isNotEmpty){
+          setState(() {
+            _enableArrowBtns = true;
+          });
+        }
+        data.add(docs);
+        return FirebaseFirestore.instance.collection("users").where("username", isEqualTo: "lena").get().then((value) {
+          data.add([value.docs.elementAt(0).data()]);
+
+          setState(() {
+            _resFirebase = true;
+          });
+          return data;
+        });
+      },
+      onError: (e) => print("Error getting document: $e"),
+    );
+  }
 
   final GlobalKey<ChFavoriteBtnState> _favBtnKey = GlobalKey();
   final GlobalKey<ChCheeseSliderState> _cheeseSliderKey = GlobalKey();
@@ -127,6 +146,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<Map<String, dynamic>> fbDocs = [];
 
+  String partner = "partner";
+
+  bool _resFirebase = false;
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -135,9 +158,6 @@ class _MyHomePageState extends State<MyHomePage> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
-    setState(() {
-      _enableArrowBtns = true;
-    });
     return Scaffold(
       appBar: AppBar(toolbarHeight: 0),
       backgroundColor: Color.fromRGBO(255, 201, 3, 1.0),
@@ -154,23 +174,29 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               },),
               const Text("Cheese Hub", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
-              CHIconButton(icon: Icons.person_outline, onPressed: (){})
+              CHIconButton(icon: Icons.person_outline, onPressed: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileRoute()),
+                );
+              })
             ],
           ),
           Center(
             // Center is a layout widget. It takes a single child and positions it
             // in the middle of the parent.
-            child: FutureBuilder<List<Map<String, dynamic>>>(
+            child: FutureBuilder<List<List<Map<String, dynamic>>>>(
               future: _textLoaded,
-              builder: (BuildContext context, AsyncSnapshot<List<Map<String,dynamic>>> snapshot){
+              builder: (BuildContext context, AsyncSnapshot<List<List<Map<String,dynamic>>>> snapshot){
                 if(snapshot.hasData){
-                  if(snapshot.data?.isEmpty ?? true){
+                  if(snapshot.data?.elementAt(0).isEmpty ?? true){
                     return const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 40),
                       child: Text("Nothing here yet for today :( \n (Does not mean that you aren't gorgeous or sexy - you are both)", textAlign: TextAlign.center,)
                     );
                   }
-                  fbDocs = snapshot.data ?? [];
+                  partner = snapshot.data?.elementAt(1).elementAt(0)["partner"].toString() ?? "";
+                  fbDocs = snapshot.data?.elementAt(0) ?? [];
                   List? cheesiness = fbDocs.map((i) => i["cheesiness"]).toList();
                   List? hearted = fbDocs.map((i) => i["favourite"]).toList();
                   return Column(
@@ -187,7 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           },
                         ),
                         carouselController: _carouselController,
-                        items: snapshot.data?.map((i) {
+                        items: fbDocs.map((i) {
                           return i["msg"];
                         }).map((i) {
                           return Builder(
@@ -221,7 +247,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             onChangeEnd: (double value){
                               FirebaseFirestore.instance
                                   .collection("lena")
-                                  .doc(snapshot.data?[currentPage]["_id"])
+                                  .doc(fbDocs[currentPage]["_id"])
                                   .update({"cheesiness": value.toInt()});
                               fbDocs[currentPage]["cheesiness"] = value.toInt();
                             },
@@ -232,7 +258,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             onPressed: (bool hearted){
                               FirebaseFirestore.instance
                                   .collection("lena")
-                                  .doc(snapshot.data?[currentPage]["_id"])
+                                  .doc(fbDocs[currentPage]["_id"])
                                   .update({"favourite": hearted});
                               fbDocs[currentPage]["favourite"] = hearted;
                             },
@@ -256,12 +282,12 @@ class _MyHomePageState extends State<MyHomePage> {
               CHArrowButton(onPressed: (_enableArrowBtns) ? (){
                 _carouselController.previousPage();
               } : null, pointsToRight: false,),
-              CHIconButton(icon: Icons.chat_outlined, onPressed: (){
+              CHIconButton(icon: Icons.chat_outlined, onPressed: (_resFirebase) ? (){
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ChatRoute()),
+                  MaterialPageRoute(builder: (context) => ChatRoute(partner: partner,)),
                 );
-              }),
+              } : null),
               CHArrowButton(onPressed: (_enableArrowBtns) ? (){
                 _carouselController.nextPage();
               } : null, pointsToRight: true,),

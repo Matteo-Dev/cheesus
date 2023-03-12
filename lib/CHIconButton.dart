@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class CHIconButton extends StatelessWidget {
   final IconData icon;
 
-  final VoidCallback onPressed;
+  final void Function()? onPressed;
 
   const CHIconButton({Key? key, required this.icon, required this.onPressed}) : super(key: key);
 

@@ -24,10 +24,7 @@ class _HistoryRouteState extends State<HistoryRoute> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 CHIconButton(icon: Icons.arrow_back, onPressed: (){
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MyHomePage()),
-                  );
+                  Navigator.pop(context);
                 },),
                 const Text("Cheese History", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
                 const FillerAvatar()
