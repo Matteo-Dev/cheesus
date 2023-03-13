@@ -5,7 +5,9 @@ import 'CHIconButton.dart';
 import 'FillerAvatar.dart';
 
 class ProfileRoute extends StatelessWidget {
-  const ProfileRoute({Key? key}) : super(key: key);
+  final Map<String, String> user;
+
+  const ProfileRoute({Key? key, required this.user}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,18 @@ class ProfileRoute extends StatelessWidget {
                 const FillerAvatar()
               ],
             ),
-            Text("test")
+            Center(
+              child: CircleAvatar(
+                radius: 69,
+                backgroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 59,
+                  backgroundImage: AssetImage("images/cheesus.png"),
+                ),
+              )
+            ),
+            Text("@"+(user["username"] ?? "")),
+            Text((user["email"] ?? "loading"))
           ],
         )
     );

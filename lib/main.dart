@@ -7,6 +7,7 @@ import 'package:cheesus/CHFavoriteBtn.dart';
 import 'package:cheesus/CHIconButton.dart';
 import 'package:cheesus/ChatRoute.dart';
 import 'package:cheesus/HistoryRoute.dart';
+import 'package:cheesus/LoadingRoute.dart';
 import 'package:cheesus/ProfileRoute.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -45,7 +46,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: "Karla"
       ),
-      home: const MyHomePage(),
+      home: const LoadingRoute(),
     );
   }
 }
@@ -86,7 +87,7 @@ Color shadeColor(Color color, double factor) => Color.fromRGBO(
     1);
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+  const MyHomePage({super.key, required Future<List<List<Map<String, dynamic>>>> firebaseData});
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -124,6 +125,8 @@ class _MyHomePageState extends State<MyHomePage> {
         data.add(docs);
         return FirebaseFirestore.instance.collection("users").where("username", isEqualTo: "lena").get().then((value) {
           data.add([value.docs.elementAt(0).data()]);
+          user = value.docs.elementAt(0).data().map((key, value) => MapEntry(key, value.toString()));
+          print(user);
 
           setState(() {
             _resFirebase = true;
@@ -149,6 +152,8 @@ class _MyHomePageState extends State<MyHomePage> {
   String partner = "partner";
 
   bool _resFirebase = false;
+
+  late Map<String, String> user;
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +182,7 @@ class _MyHomePageState extends State<MyHomePage> {
               CHIconButton(icon: Icons.person_outline, onPressed: (){
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ProfileRoute()),
+                  MaterialPageRoute(builder: (context) => ProfileRoute(user: user)),
                 );
               })
             ],

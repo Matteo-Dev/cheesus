@@ -1,5 +1,7 @@
 import 'package:cheesus/CHBigButton.dart';
 import 'package:cheesus/FillerAvatar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -107,14 +109,24 @@ class _ChatRouteState extends State<ChatRoute> {
                       FocusScope.of(context).unfocus();
                     }, text: "Save"),
                     const SizedBox(width: 10,),
-                    ChBigButton(onPressed: (){
+                    ChBigButton(onPressed: () async {
                       FocusScope.of(context).unfocus();
-
+                      FirebaseFirestore db = FirebaseFirestore.instance;
+                      int duplicates = await db.collection(widget.partner).where("msg", isEqualTo: _textEditingController.value.text).count().get().then((value) => value.count);
+                      if(duplicates != 0){
+                        await db.collection(widget.partner).add({
+                          "msg": _textEditingController.value.text,
+                          "cheesiness": 0,
+                          "favourite": false,
+                          "date-published": Timestamp.now(),
+                          "type": "RM"
+                        }); // TODO: reassurance text for sending?
+                      }
                     }, text: "Send")
                   ],
                 ),
               ),
-              Text(widget.partner)
+              //Text(widget.partner)
             ],
           )
       ),
