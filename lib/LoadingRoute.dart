@@ -32,7 +32,7 @@ class _LoadingRouteState extends State<LoadingRoute> {
           docs.add(extDoc);
         }
         // TODO docs.notEmpty check
-        data.add(docs);
+        data.add(docs.reversed.toList());
         print(docs);
         return FirebaseFirestore.instance.collection("users").where("username", isEqualTo: widget.user?.displayName).get().then((value) {
           data.add([value.docs.elementAt(0).data()]);
