@@ -20,7 +20,7 @@ class _LoadingRouteState extends State<LoadingRoute> {
   void initState() {
     super.initState();
     DateTime now = DateTime.now();
-    _firebaseData = FirebaseFirestore.instance.collection(widget.user?.displayName ?? "").where("type", isEqualTo: "RM").where("date-published", isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day)).get().then(
+    _firebaseData = FirebaseFirestore.instance.collection("cheese").where("receiver", isEqualTo: widget.user?.displayName).where("date-published", isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day)).get().then(
           (event) {
         List<List<Map<String, dynamic>>> data = [];
         List<Map<String, dynamic>> docs = [];
@@ -33,6 +33,7 @@ class _LoadingRouteState extends State<LoadingRoute> {
         }
         // TODO docs.notEmpty check
         data.add(docs);
+        print(docs);
         return FirebaseFirestore.instance.collection("users").where("username", isEqualTo: widget.user?.displayName).get().then((value) {
           data.add([value.docs.elementAt(0).data()]);
           // TODO set user and resp Firebase

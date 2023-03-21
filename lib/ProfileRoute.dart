@@ -13,11 +13,11 @@ class ProfileRoute extends StatelessWidget {
   late final Future<List<int>> cheeseData;
 
   ProfileRoute({super.key, required this.user}){
-    cheeseData = FirebaseFirestore.instance.collection(user["username"] ?? "").where("type", isEqualTo: "RM").get().then((value) {
+    cheeseData = FirebaseFirestore.instance.collection("cheese").where("receiver", isEqualTo: user["username"]).get().then((value) {
       List<int> res = [];
       res.add(value.docs.length);
 
-      return FirebaseFirestore.instance.collection(user["username"] ?? "").where("type", isEqualTo: "CM").get().then((value) {
+      return FirebaseFirestore.instance.collection("cheese").where("creator", isEqualTo: user["username"]).get().then((value) {
         res.add(value.docs.length);
         return res;
       });

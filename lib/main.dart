@@ -187,7 +187,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         initialValue: (cheesiness?[0] as int).toDouble(),
                         onChangeEnd: (double value){
                           FirebaseFirestore.instance
-                              .collection(user["username"] ?? "")
+                              .collection("cheese")
                               .doc(fbDocs[currentPage]["_id"])
                               .update({"cheesiness": value.toInt()});
                           fbDocs[currentPage]["cheesiness"] = value.toInt();
@@ -198,7 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         initHearted: (hearted?[0] as bool),
                         onPressed: (bool hearted){
                           FirebaseFirestore.instance
-                              .collection(user["username"] ?? "")
+                              .collection("cheese")
                               .doc(fbDocs[currentPage]["_id"])
                               .update({"favourite": hearted});
                           fbDocs[currentPage]["favourite"] = hearted;

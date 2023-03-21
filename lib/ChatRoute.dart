@@ -113,21 +113,19 @@ class _ChatRouteState extends State<ChatRoute> {
                     ChBigButton(onPressed: () async {
                       FocusScope.of(context).unfocus();
                       FirebaseFirestore db = FirebaseFirestore.instance;
-                      int duplicates = await db.collection(widget.user["partner"] ?? "").where("msg", isEqualTo: _textEditingController.value.text).count().get().then((value) => value.count);
+                      int duplicates = await db.collection("cheese").where("receiver", isEqualTo: widget.user["partner"]).where("msg", isEqualTo: _textEditingController.value.text).count().get().then((value) => value.count);
                       if(duplicates == 0){
                         Timestamp timeNow = Timestamp.now();
-                        await db.collection(widget.user["partner"] ?? "").add({
+                        await db.collection("cheese").add({
                           "msg": _textEditingController.value.text,
                           "cheesiness": 0,
                           "favourite": false,
                           "date-published": timeNow,
-                          "type": "RM"
+                          "date-created": timeNow,
+                          "receiver": widget.user["partner"],
+                          "creator": widget.user["username"]
                         });
-                        await db.collection(widget.user["username"] ?? "").add({
-                          "msg": _textEditingController.value.text,
-                          "date-published": timeNow,
-                          "type": "CM"
-                        });// TODO: reassurance text for sending?
+                        // TODO: reassurance text for sending?
                       }
                     }, text: "Send")
                   ],

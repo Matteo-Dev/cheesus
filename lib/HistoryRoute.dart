@@ -31,10 +31,9 @@ class _HistoryRouteState extends State<HistoryRoute> {
   @override
   void initState() {
     super.initState();
-    initialData = FirebaseFirestore.instance.collection(widget.user["username"] ?? "").where("type", isEqualTo: "RM").orderBy("date-published", descending: true).limit(10).get().then((data) {
+    initialData = FirebaseFirestore.instance.collection("cheese").where("receiver", isEqualTo: widget.user["username"]).orderBy("date-published", descending: true).limit(10).get().then((data) {
       List<List<Map<String, dynamic>>> res = [];
       Map<int, List<QueryDocumentSnapshot<Map<String, dynamic>>>> groupedByMonths = groupBy(data.docs, (doc) {
-        print( doc.data()["date-published"]);
         return doc.data()["date-published"].toDate().month as int;
       });
       print(groupedByMonths);
