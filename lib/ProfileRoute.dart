@@ -114,7 +114,14 @@ class ProfileRoute extends StatelessWidget {
                               ],
                             );
                           }
-                          return SizedBox();
+                          return Container(
+                            height: 172,
+                            child: Center(child: SizedBox(
+                              child: CircularProgressIndicator(),
+                              height: 24,
+                              width: 24,
+                            ),)
+                          );
                         }
                     ),
                     SizedBox(height: 15,),
