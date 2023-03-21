@@ -1,10 +1,13 @@
 import 'package:cheesus/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class LoadingRoute extends StatefulWidget {
-  const LoadingRoute({Key? key}) : super(key: key);
+  final User? user;
+
+  const LoadingRoute({Key? key, required this.user}) : super(key: key);
 
   @override
   State<LoadingRoute> createState() => _LoadingRouteState();
@@ -13,8 +16,11 @@ class LoadingRoute extends StatefulWidget {
 class _LoadingRouteState extends State<LoadingRoute> {
   late Future<List<List<Map<String,dynamic>>>> _firebaseData;
 
-  _LoadingRouteState(){
-    _firebaseData = FirebaseFirestore.instance.collection("lena").where("date-published", isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))).get().then(
+  @override
+  void initState() {
+    super.initState();
+    DateTime now = DateTime.now();
+    _firebaseData = FirebaseFirestore.instance.collection(widget.user?.displayName ?? "").where("type", isEqualTo: "RM").where("date-published", isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day)).get().then(
           (event) {
         List<List<Map<String, dynamic>>> data = [];
         List<Map<String, dynamic>> docs = [];
@@ -27,16 +33,20 @@ class _LoadingRouteState extends State<LoadingRoute> {
         }
         // TODO docs.notEmpty check
         data.add(docs);
-        return FirebaseFirestore.instance.collection("users").where("username", isEqualTo: "lena").get().then((value) {
+        return FirebaseFirestore.instance.collection("users").where("username", isEqualTo: widget.user?.displayName).get().then((value) {
           data.add([value.docs.elementAt(0).data()]);
           // TODO set user and resp Firebase
 
-          Navigator.pushReplacement(
-            context,
-              MaterialPageRoute(builder: (context) => const MyHomePage(firebaseData: _firebaseData))
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => MyHomePage(firebaseData: data))
+            );
+          });
+          WidgetsBinding.instance.ensureVisualUpdate();
           return data;
         });
+
       },
       onError: (e) => print("Error getting document: $e"),
     );
@@ -45,6 +55,7 @@ class _LoadingRouteState extends State<LoadingRoute> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(toolbarHeight: 0),
         backgroundColor: const Color.fromRGBO(255, 201, 3, 1.0),
         body: Padding(
@@ -58,6 +69,7 @@ class _LoadingRouteState extends State<LoadingRoute> {
                     CircleAvatar(
                       radius: 59,
                       backgroundImage: AssetImage("images/cheesus.png"),
+                      backgroundColor: Colors.white,
                     ),
                     SizedBox(height: 20,),
                     Text(

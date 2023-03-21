@@ -8,6 +8,7 @@ import 'package:cheesus/CHIconButton.dart';
 import 'package:cheesus/ChatRoute.dart';
 import 'package:cheesus/HistoryRoute.dart';
 import 'package:cheesus/LoadingRoute.dart';
+import 'package:cheesus/LoginRoute.dart';
 import 'package:cheesus/ProfileRoute.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: "Karla"
       ),
-      home: const LoadingRoute(),
+      home: LoginRoute(),
     );
   }
 }
@@ -87,7 +88,9 @@ Color shadeColor(Color color, double factor) => Color.fromRGBO(
     1);
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required Future<List<List<Map<String, dynamic>>>> firebaseData});
+  final List<List<Map<String, dynamic>>> firebaseData;
+
+  const MyHomePage({super.key, required this.firebaseData});
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -103,68 +106,117 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Future<List<List<Map<String,dynamic>>>> _textLoaded;
-
-  _MyHomePageState(){
-    _textLoaded = FirebaseFirestore.instance.collection("lena").where("date-published", isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))).get().then(
-          (event) {
-        List<List<Map<String, dynamic>>> data = [];
-        List<Map<String, dynamic>> docs = [];
-        for(var doc in event.docs){
-          Map<String, dynamic> extDoc = {
-            ...doc.data(),
-            ...{"_id": doc.id}
-          };
-          docs.add(extDoc);
-        }
-        if(docs.isNotEmpty){
-          setState(() {
-            _enableArrowBtns = true;
-          });
-        }
-        data.add(docs);
-        return FirebaseFirestore.instance.collection("users").where("username", isEqualTo: "lena").get().then((value) {
-          data.add([value.docs.elementAt(0).data()]);
-          user = value.docs.elementAt(0).data().map((key, value) => MapEntry(key, value.toString()));
-          print(user);
-
-          setState(() {
-            _resFirebase = true;
-          });
-          return data;
-        });
-      },
-      onError: (e) => print("Error getting document: $e"),
-    );
-  }
-
   final GlobalKey<ChFavoriteBtnState> _favBtnKey = GlobalKey();
   final GlobalKey<ChCheeseSliderState> _cheeseSliderKey = GlobalKey();
-
-  bool _enableArrowBtns = false;
 
   final CarouselController _carouselController = CarouselController();
 
   int currentPage = 0;
 
-  List<Map<String, dynamic>> fbDocs = [];
+  late List<Map<String, dynamic>> fbDocs;
 
-  String partner = "partner";
-
-  bool _resFirebase = false;
+  late String partner;
 
   late Map<String, String> user;
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    fbDocs = widget.firebaseData.elementAt(0);
+    user = widget.firebaseData.elementAt(1).elementAt(0).map((key, value) => MapEntry(key, value.toString()));
+    partner = user["partner"] ?? "";
+
+    List<int> cheesiness = fbDocs.map((i) => i["cheesiness"] as int).toList();
+    List<bool> hearted = fbDocs.map((i) => i["favourite"] as bool).toList();
+
+    // TODO: Check if list empty!
+    Widget mainWidget;
+
+    if(widget.firebaseData.elementAt(0).isEmpty){
+      mainWidget = const Padding(
+        padding: EdgeInsets.all(70),
+        child: Text("Bisher ist leider noch kein neuer Cheese für heute angekommen :(", textAlign: TextAlign.center,)
+      );
+    } else {
+      mainWidget = Column(
+        children: [
+          CarouselSlider(
+            options: CarouselOptions(
+              height: 250.0,
+              enlargeCenterPage: true,
+              enableInfiniteScroll: false,
+              onPageChanged: (pageNum, changeReason){
+                _favBtnKey.currentState!.setHearted(fbDocs.map((i) => i["favourite"]).toList()[pageNum] as bool);
+                _cheeseSliderKey.currentState!.setValue((fbDocs.map((i) => i["cheesiness"]).toList()[pageNum] as int).toDouble());
+                currentPage = pageNum;
+              },
+            ),
+            carouselController: _carouselController,
+            items: fbDocs.map((i) {
+              return i["msg"];
+            }).map((i) {
+              return Builder(
+                builder: (BuildContext context) {
+                  return Container(
+                      width: MediaQuery.of(context).size.width,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.all(Radius.circular(35)),
+                          border: Border.all(color: Colors.black, width: 3)
+                      ),
+                      child: Padding(
+                          padding: EdgeInsets.all(25),
+                          child: Center(
+                            child: Text('$i', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                          )
+                      )
+                  );
+                },
+              );
+            }).toList(),
+          ),
+          Padding(
+              padding: EdgeInsets.only(left: 40, right: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ChCheeseSlider(
+                        key: _cheeseSliderKey,
+                        initialValue: (cheesiness?[0] as int).toDouble(),
+                        onChangeEnd: (double value){
+                          FirebaseFirestore.instance
+                              .collection(user["username"] ?? "")
+                              .doc(fbDocs[currentPage]["_id"])
+                              .update({"cheesiness": value.toInt()});
+                          fbDocs[currentPage]["cheesiness"] = value.toInt();
+                        },
+                      ),
+                      ChFavoriteBtn(
+                        key: _favBtnKey,
+                        initHearted: (hearted?[0] as bool),
+                        onPressed: (bool hearted){
+                          FirebaseFirestore.instance
+                              .collection(user["username"] ?? "")
+                              .doc(fbDocs[currentPage]["_id"])
+                              .update({"favourite": hearted});
+                          fbDocs[currentPage]["favourite"] = hearted;
+                        },
+                      )
+                    ],
+                  ),
+                  // TextButton(onPressed: (){}, child: Text("Nach neuem Cheese suchen", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.black)))
+                ],
+              )
+          )
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(toolbarHeight: 0),
+      resizeToAvoidBottomInset: false, // https://stackoverflow.com/questions/55312583/overflow-error-in-flutter-when-keyboard-open
       backgroundColor: Color.fromRGBO(255, 201, 3, 1.0),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -175,7 +227,7 @@ class _MyHomePageState extends State<MyHomePage> {
               CHIconButton(icon: Icons.history, onPressed: (){
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const HistoryRoute()),
+                  MaterialPageRoute(builder: (context) => HistoryRoute(user: user)),
                 );
               },),
               const Text("Cheese Hub", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
@@ -190,112 +242,20 @@ class _MyHomePageState extends State<MyHomePage> {
           Center(
             // Center is a layout widget. It takes a single child and positions it
             // in the middle of the parent.
-            child: FutureBuilder<List<List<Map<String, dynamic>>>>(
-              future: _textLoaded,
-              builder: (BuildContext context, AsyncSnapshot<List<List<Map<String,dynamic>>>> snapshot){
-                if(snapshot.hasData){
-                  if(snapshot.data?.elementAt(0).isEmpty ?? true){
-                    return const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 40),
-                      child: Text("Nothing here yet for today :( \n (Does not mean that you aren't gorgeous or sexy - you are both)", textAlign: TextAlign.center,)
-                    );
-                  }
-                  partner = snapshot.data?.elementAt(1).elementAt(0)["partner"].toString() ?? "";
-                  fbDocs = snapshot.data?.elementAt(0) ?? [];
-                  List? cheesiness = fbDocs.map((i) => i["cheesiness"]).toList();
-                  List? hearted = fbDocs.map((i) => i["favourite"]).toList();
-                  return Column(
-                    children: [
-                      CarouselSlider(
-                        options: CarouselOptions(
-                          height: 250.0,
-                          enlargeCenterPage: true,
-                          enableInfiniteScroll: false,
-                          onPageChanged: (pageNum, changeReason){
-                            _favBtnKey.currentState!.setHearted(fbDocs.map((i) => i["favourite"]).toList()[pageNum] as bool);
-                            _cheeseSliderKey.currentState!.setValue((fbDocs.map((i) => i["cheesiness"]).toList()[pageNum] as int).toDouble());
-                            currentPage = pageNum;
-                          },
-                        ),
-                        carouselController: _carouselController,
-                        items: fbDocs.map((i) {
-                          return i["msg"];
-                        }).map((i) {
-                          return Builder(
-                            builder: (BuildContext context) {
-                              return Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.all(Radius.circular(35)),
-                                      border: Border.all(color: Colors.black, width: 3)
-                                  ),
-                                  child: Padding(
-                                      padding: EdgeInsets.all(25),
-                                      child: Center(
-                                        child: Text('$i', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                                      )
-                                  )
-                              );
-                            },
-                          );
-                        }).toList(),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(left: 40, right: 20),
-                        child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ChCheeseSlider(
-                              key: _cheeseSliderKey,
-                              initialValue: (cheesiness?[0] as int).toDouble(),
-                            onChangeEnd: (double value){
-                              FirebaseFirestore.instance
-                                  .collection("lena")
-                                  .doc(fbDocs[currentPage]["_id"])
-                                  .update({"cheesiness": value.toInt()});
-                              fbDocs[currentPage]["cheesiness"] = value.toInt();
-                            },
-                          ),
-                          ChFavoriteBtn(
-                            key: _favBtnKey,
-                            initHearted: (hearted?[0] as bool),
-                            onPressed: (bool hearted){
-                              FirebaseFirestore.instance
-                                  .collection("lena")
-                                  .doc(fbDocs[currentPage]["_id"])
-                                  .update({"favourite": hearted});
-                              fbDocs[currentPage]["favourite"] = hearted;
-                            },
-                          )
-                        ],
-                      ),
-                      )
-                    ],
-                  );
-                }
-                else{
-                  return Text("Nothing here yet :(");
-                }
-              },
-            ),
+            child: mainWidget,
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // ARROW BUTTONS ARE DISABLED BY onPressed = null!!!
-              CHArrowButton(onPressed: (_enableArrowBtns) ? (){
-                _carouselController.previousPage();
-              } : null, pointsToRight: false,),
-              CHIconButton(icon: Icons.chat_outlined, onPressed: (_resFirebase) ? (){
+              CHArrowButton(onPressed: _carouselController.previousPage, pointsToRight: false,),
+              CHIconButton(icon: Icons.chat_outlined, onPressed: (){
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ChatRoute(partner: partner,)),
+                  MaterialPageRoute(builder: (context) => ChatRoute(user: user)),
                 );
-              } : null),
-              CHArrowButton(onPressed: (_enableArrowBtns) ? (){
-                _carouselController.nextPage();
-              } : null, pointsToRight: true,),
+              }),
+              CHArrowButton(onPressed: _carouselController.nextPage, pointsToRight: true,),
             ],
           )
         ],

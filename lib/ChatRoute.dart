@@ -9,9 +9,9 @@ import 'CHIconButton.dart';
 import 'main.dart';
 
 class ChatRoute extends StatefulWidget {
-  final String partner;
+  final Map<String, String> user;
 
-  const ChatRoute({Key? key, required this.partner}) : super(key: key);
+  const ChatRoute({Key? key, required this.user}) : super(key: key);
 
   @override
   State<ChatRoute> createState() => _ChatRouteState();
@@ -27,6 +27,7 @@ class _ChatRouteState extends State<ChatRoute> {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
+          resizeToAvoidBottomInset: false,
           appBar: AppBar(toolbarHeight: 0),
           backgroundColor: Color.fromRGBO(255, 201, 3, 1.0),
           body: Column(
@@ -112,15 +113,21 @@ class _ChatRouteState extends State<ChatRoute> {
                     ChBigButton(onPressed: () async {
                       FocusScope.of(context).unfocus();
                       FirebaseFirestore db = FirebaseFirestore.instance;
-                      int duplicates = await db.collection(widget.partner).where("msg", isEqualTo: _textEditingController.value.text).count().get().then((value) => value.count);
-                      if(duplicates != 0){
-                        await db.collection(widget.partner).add({
+                      int duplicates = await db.collection(widget.user["partner"] ?? "").where("msg", isEqualTo: _textEditingController.value.text).count().get().then((value) => value.count);
+                      if(duplicates == 0){
+                        Timestamp timeNow = Timestamp.now();
+                        await db.collection(widget.user["partner"] ?? "").add({
                           "msg": _textEditingController.value.text,
                           "cheesiness": 0,
                           "favourite": false,
-                          "date-published": Timestamp.now(),
+                          "date-published": timeNow,
                           "type": "RM"
-                        }); // TODO: reassurance text for sending?
+                        });
+                        await db.collection(widget.user["username"] ?? "").add({
+                          "msg": _textEditingController.value.text,
+                          "date-published": timeNow,
+                          "type": "CM"
+                        });// TODO: reassurance text for sending?
                       }
                     }, text: "Send")
                   ],
