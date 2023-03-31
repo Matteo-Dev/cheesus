@@ -69,78 +69,83 @@ class _ChatRouteState extends State<ChatRoute> {
                   const FillerAvatar()
                 ],
               ),
-              Center(
-                  child: Padding(
-                      padding: const EdgeInsets.fromLTRB(40, 40, 40, 10),
-                    child: TextField(
-                      controller: _textEditingController,
-                      expands: false,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      minLines: 3,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(35)),
-                          borderSide: BorderSide(color: Colors.black, width: 3)
+              Expanded(child: ListView(
+                children: [
+                  Center(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(40, 40, 40, 10),
+                        child: TextField(
+                          controller: _textEditingController,
+                          expands: false,
+                          keyboardType: TextInputType.multiline,
+                          maxLines: null,
+                          minLines: 3,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          decoration: const InputDecoration(
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(35)),
+                                  borderSide: BorderSide(color: Colors.black, width: 3)
+                              ),
+                              fillColor: Colors.white,
+                              filled: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 30,
+                                  horizontal: 30
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(35)),
+                                  borderSide: BorderSide(color: Colors.black, width: 3)
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(35)),
+                                  borderSide: BorderSide(color: Colors.black, width: 3)
+                              ),
+                              hintText: "The finest cheese comes here"
+                          ),
                         ),
-                        fillColor: Colors.white,
-                        filled: true,
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 30,
-                          horizontal: 30
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(35)),
-                            borderSide: BorderSide(color: Colors.black, width: 3)
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(35)),
-                            borderSide: BorderSide(color: Colors.black, width: 3)
-                        ),
-                        hintText: "The finest cheese comes here"
-                      ),
-                    ),
-                  )
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
+                      )
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 40, top: 0, right: 40, bottom: 10),
+                    child: Row(
+                      children: [
+                        /*
                     ChBigButton(onPressed: (){
                       FocusScope.of(context).unfocus();
                     }, text: "Save"),
-                    const SizedBox(width: 10,),
-                    ChBigButton(onPressed: () async {
-                      FocusScope.of(context).unfocus();
-                      FirebaseFirestore db = FirebaseFirestore.instance;
-                      int duplicates = await db.collection("cheese").where("receiver", isEqualTo: widget.user["partner"]).where("msg", isEqualTo: _textEditingController.value.text).count().get().then((value) => value.count);
-                      if(duplicates == 0){
-                        Timestamp timeNow = Timestamp.now();
-                        await db.collection("cheese").add({
-                          "msg": _textEditingController.value.text,
-                          "cheesiness": 0,
-                          "favourite": false,
-                          "date-published": timeNow,
-                          "date-created": timeNow,
-                          "receiver": widget.user["partner"],
-                          "creator": widget.user["username"]
-                        });
-                        await http.post(
-                          Uri.parse("https://cheesus.mertz-es.de/sendTo"),
-                          body: '{"partner": "${widget.user["partner"]}", "title": "New Cheese!", "body": "Cheesus hat frischen Cheese für dich!"}',
-                            headers: {
-                              "Content-Type": "application/json"
+                    const SizedBox(width: 10,),*/
+                        Expanded(
+                          child: ChBigButton(onPressed: () async {
+                            FocusScope.of(context).unfocus();
+                            FirebaseFirestore db = FirebaseFirestore.instance;
+                            int duplicates = await db.collection("cheese").where("receiver", isEqualTo: widget.user["partner"]).where("msg", isEqualTo: _textEditingController.value.text).count().get().then((value) => value.count);
+                            if(duplicates == 0){
+                              Timestamp timeNow = Timestamp.now();
+                              await db.collection("cheese").add({
+                                "msg": _textEditingController.value.text,
+                                "cheesiness": 0,
+                                "favourite": false,
+                                "date-published": timeNow,
+                                "date-created": timeNow,
+                                "receiver": widget.user["partner"],
+                                "creator": widget.user["username"]
+                              });
+                              await http.post(
+                                  Uri.parse("https://cheesus.mertz-es.de/sendTo"),
+                                  body: '{"partner": "${widget.user["partner"]}", "title": "New Cheese!", "body": "Cheesus hat frischen Cheese für dich!"}',
+                                  headers: {
+                                    "Content-Type": "application/json"
+                                  }
+                              );
+                              // TODO: reassurance text for sending?
                             }
-                        );
-                        // TODO: reassurance text for sending?
-                      }
-                    }, text: "Send")
-                  ],
-                ),
-              ),
-              //Text(widget.partner)
+                          }, text: "Send", primary: true,),
+                        )
+                      ],
+                    ),
+                  ),
+                ],
+              ))              //Text(widget.partner)
             ],
           )
       ),

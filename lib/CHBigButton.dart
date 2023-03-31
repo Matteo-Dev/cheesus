@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 class ChBigButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
+  final bool primary;
 
-  const ChBigButton({Key? key, required this.onPressed, required this.text}) : super(key: key);
+  const ChBigButton({Key? key, required this.onPressed, required this.text, required this.primary}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +14,7 @@ class ChBigButton extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border.all(color: Colors.black, width: 3),
         borderRadius: const BorderRadius.all(Radius.circular(100)),
-        color: Colors.white,
+        color: primary? Colors.black : Colors.white,
       ),
       padding: EdgeInsets.symmetric(horizontal: 5),
       child: TextButton(
@@ -27,9 +28,9 @@ class ChBigButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                   fontFamily: "Inter",
-                  color: Colors.black,
+                  color: primary ? Colors.white : Colors.black,
                   fontWeight: FontWeight.bold),
             )
         ),
