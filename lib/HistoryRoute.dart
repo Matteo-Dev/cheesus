@@ -19,8 +19,6 @@ class HistoryRoute extends StatefulWidget {
 }
 
 class _HistoryRouteState extends State<HistoryRoute> {
-  late Future<List<List<Map<String, dynamic>>>> initialData;
-
   Map<T, List<S>> groupBy<S, T>(Iterable<S> values, T Function(S) key) {
     var map = <T, List<S>>{};
     for (var element in values) {
@@ -80,7 +78,7 @@ class _HistoryRouteState extends State<HistoryRoute> {
   @override
   void initState() {
     super.initState();
-    initialData = FirebaseFirestore.instance.collection("cheese").where("receiver", isEqualTo: widget.user["username"]).orderBy("date-published", descending: true).limit(10).get().then((data) {
+    FirebaseFirestore.instance.collection("cheese").where("receiver", isEqualTo: widget.user["username"]).orderBy("date-published", descending: true).limit(10).get().then((data) {
       List<List<Map<String, dynamic>>> res = [];
       Map<int, List<QueryDocumentSnapshot<Map<String, dynamic>>>> groupedByMonths = groupBy(data.docs, (doc) {
         return doc.data()["date-published"].toDate().month as int;
@@ -89,142 +87,68 @@ class _HistoryRouteState extends State<HistoryRoute> {
         res.add(groupedByMonths[key]?.map((e) => e.data()).toList() ?? []);
       }
       latestCheck = data.docs.last.data()["date-published"].toDate();
-      return res;
+      currentData = res;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget historyView;
-    if(initialFetchCompleted){
-      // https://medium.com/@archelangelo/flutter-load-contents-lazily-on-scroll-made-simple-c6817f94e5d0
-      historyView = ListView.builder(
-          padding: EdgeInsets.only(left: 40, right: 40, bottom: 40),
-          itemCount: _hasMore ? _filteredData.length + 1 : _filteredData.length,
-          itemBuilder: (BuildContext context, int index) {
-            if(index >= _filteredData.length){
-              if(!_isLoading){
-                _loadMore();
-              }
-              return Center(
-                child: SizedBox(
-                  child: CircularProgressIndicator(),
-                  height: 24,
-                  width: 24,
-                ),
-              );
+    Widget historyView = ListView.builder(
+        padding: EdgeInsets.only(left: 40, right: 40, bottom: 40),
+        itemCount: _hasMore ? _filteredData.length + 1 : _filteredData.length,
+        itemBuilder: (BuildContext context, int index) {
+          if(index >= _filteredData.length){
+            if(!_isLoading){
+              _loadMore();
             }
-            List<Map<String, dynamic>> cheeseOfTheMonth = _filteredData.elementAt(index);
-            List<Widget> msgContainer = cheeseOfTheMonth.map((doc) {
-              return Stack(
-                alignment: Alignment.bottomRight,
-                fit: StackFit.passthrough,
-                children: [
-                  Container(
-                    margin: EdgeInsets.symmetric(vertical: 5),
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.all(Radius.circular(5)),
-                        border: Border.all(color: Colors.black, width: 2)
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Text(doc["msg"], textAlign: TextAlign.center,),
-                    ),
-                  ),
-                  doc["favourite"] ? Container(child: Icon(Icons.favorite, size: 15), alignment: Alignment.bottomRight, padding: EdgeInsets.all(10),) : SizedBox(),
-                  Container(child: Text((doc["cheesiness"]+1).toString() + "C"), alignment: Alignment.bottomLeft, padding: EdgeInsets.all(10),)
-                ],
-              );
-            }).toList();
-            int month = cheeseOfTheMonth.elementAt(0)["date-published"].toDate().month;
-            int year = cheeseOfTheMonth.elementAt(0)["date-published"].toDate().year;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(months.elementAt(month-1) + " " + year.toString(), textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  ...msgContainer
-                ],
+            return Center(
+              child: SizedBox(
+                child: CircularProgressIndicator(),
+                height: 24,
+                width: 24,
               ),
             );
           }
-      );
-    } else {
-      historyView = FutureBuilder(
-          future: initialData,
-          builder: (BuildContext context, AsyncSnapshot<List<List<Map<String, dynamic>>>> snapshot){
-            if(snapshot.hasData){
-              initialFetchCompleted = true;
-              List<List<Map<String, dynamic>>> data = snapshot.data ?? [];
-              currentData = data;
-              _filteredData = data;
-
-              return ListView.builder(
-                  padding: EdgeInsets.only(left: 40, right: 40, bottom: 40),
-                  itemCount: _hasMore ? _filteredData.length + 1 : _filteredData.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    if(index >= _filteredData.length){
-                      if(!_isLoading){
-                        _loadMore();
-                      }
-                      return Center(
-                        child: SizedBox(
-                          child: CircularProgressIndicator(),
-                          height: 24,
-                          width: 24,
-                        ),
-                      );
-                    }
-                    List<Map<String, dynamic>> cheeseOfTheMonth = _filteredData.elementAt(index);
-                    List<Widget> msgContainer = cheeseOfTheMonth.map((doc) {
-                      return Stack(
-                        alignment: Alignment.bottomRight,
-                        fit: StackFit.passthrough,
-                        children: [
-                          Container(
-                            margin: EdgeInsets.symmetric(vertical: 5),
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.all(Radius.circular(5)),
-                                border: Border.all(color: Colors.black, width: 2)
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Text(doc["msg"], textAlign: TextAlign.center,),
-                            ),
-                          ),
-                          doc["favourite"] ? Container(child: Icon(Icons.favorite, size: 15), alignment: Alignment.bottomRight, padding: EdgeInsets.all(10),) : SizedBox(),
-                          Container(child: Text((doc["cheesiness"]+1).toString() + "C"), alignment: Alignment.bottomLeft, padding: EdgeInsets.all(10),)
-                        ],
-                      );
-                    }).toList();
-                    int month = cheeseOfTheMonth.elementAt(0)["date-published"].toDate().month;
-                    int year = cheeseOfTheMonth.elementAt(0)["date-published"].toDate().year;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Text(months.elementAt(month-1) + " " + year.toString(), textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                          ...msgContainer
-                        ],
-                      ),
-                    );
-                  }
-              );
-            }
-            return const Text("loading...");
-          }
-      );
-    }
+          List<Map<String, dynamic>> cheeseOfTheMonth = _filteredData.elementAt(index);
+          List<Widget> msgContainer = cheeseOfTheMonth.map((doc) {
+            return Stack(
+              alignment: Alignment.bottomRight,
+              fit: StackFit.passthrough,
+              children: [
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: 5),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(5)),
+                      border: Border.all(color: Colors.black, width: 2)
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(doc["msg"], textAlign: TextAlign.center,),
+                  ),
+                ),
+                doc["favourite"] ? Container(child: Icon(Icons.favorite, size: 15), alignment: Alignment.bottomRight, padding: EdgeInsets.all(10),) : SizedBox(),
+                Container(child: Text((doc["cheesiness"]+1).toString() + "C"), alignment: Alignment.bottomLeft, padding: EdgeInsets.all(10),)
+              ],
+            );
+          }).toList();
+          int month = cheeseOfTheMonth.elementAt(0)["date-published"].toDate().month;
+          int year = cheeseOfTheMonth.elementAt(0)["date-published"].toDate().year;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(months.elementAt(month-1) + " " + year.toString(), textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                ...msgContainer
+              ],
+            ),
+          );
+        }
+    );
 
     return Scaffold(
         resizeToAvoidBottomInset: false,
