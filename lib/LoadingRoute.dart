@@ -1,6 +1,7 @@
 import 'package:cheesus/main.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -39,10 +40,12 @@ class _LoadingRouteState extends State<LoadingRoute> {
           // TODO set user and resp Firebase
 
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => MyHomePage(firebaseData: data))
-            );
+            if(context.mounted){
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => MyHomePage(firebaseData: data))
+              );
+            }
           });
           WidgetsBinding.instance.ensureVisualUpdate();
           return data;
@@ -55,6 +58,12 @@ class _LoadingRouteState extends State<LoadingRoute> {
 
   @override
   Widget build(BuildContext context) {
+    FirebaseMessaging.onMessageOpenedApp.listen((event) {
+      navigatorKey.currentState?.pushReplacement(
+        MaterialPageRoute(builder: (context) => LoadingRoute(user: widget.user))
+      );
+    });
+
     return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(toolbarHeight: 0),

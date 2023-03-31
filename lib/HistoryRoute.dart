@@ -97,6 +97,7 @@ class _HistoryRouteState extends State<HistoryRoute> {
   Widget build(BuildContext context) {
     Widget historyView;
     if(initialFetchCompleted){
+      // https://medium.com/@archelangelo/flutter-load-contents-lazily-on-scroll-made-simple-c6817f94e5d0
       historyView = ListView.builder(
           padding: EdgeInsets.only(left: 40, right: 40, bottom: 40),
           itemCount: _hasMore ? _filteredData.length + 1 : _filteredData.length,

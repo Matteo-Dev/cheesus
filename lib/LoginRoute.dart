@@ -1,6 +1,7 @@
 import 'package:cheesus/LoadingRoute.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -89,12 +90,19 @@ class _LoginRouteState extends State<LoginRoute> {
                           if(usernameController.value.text.isNotEmpty && passwordController.value.text.isNotEmpty){
                             FirebaseFirestore.instance.collection("users").where("username", isEqualTo: usernameController.value.text).get().then((value) {
                               if(value.docs.isNotEmpty){
+                                String id = value.docs.elementAt(0).id;
                                 FirebaseAuth.instance.signInWithEmailAndPassword(email: value.docs.elementAt(0).data()["email"] ?? "", password: passwordController.value.text).then((value) {
                                   User? user = value.user;
-                                  Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => LoadingRoute(user: user))
-                                  );
+                                  FirebaseMessaging.instance.getToken().then((token){
+                                    FirebaseFirestore.instance.collection("users").doc(id).update({
+                                      "deviceToken": token
+                                    }).then((_) {
+                                      Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => LoadingRoute(user: user))
+                                      );
+                                    });
+                                  });
                                 });
                               }
                             });

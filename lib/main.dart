@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:carousel_slider/carousel_slider.dart';
@@ -10,17 +11,84 @@ import 'package:cheesus/HistoryRoute.dart';
 import 'package:cheesus/LoadingRoute.dart';
 import 'package:cheesus/LoginRoute.dart';
 import 'package:cheesus/ProfileRoute.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
+import 'package:rxdart/rxdart.dart';
 
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+GlobalKey<NavigatorState> navigatorKey = GlobalKey();
+
+// TODO: Add stream controller
+final _messageStreamController = BehaviorSubject<RemoteMessage>();
+
+// TODO: Define the background message handler
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+
+  if (kDebugMode) {
+    print("Handling a background message: ${message.messageId}");
+    print('Message data: ${message.data}');
+    print('Message notification: ${message.notification?.title}');
+    print('Message notification: ${message.notification?.body}');
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  ByteData data = await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+  SecurityContext.defaultContext.setTrustedCertificatesBytes(data.buffer.asUint8List());
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // TODO: Request permission
+  final messaging = FirebaseMessaging.instance;
+
+  final settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
+  if (kDebugMode) {
+    print('Permission granted: ${settings.authorizationStatus}');
+  }
+
+  // TODO: Register with FCM
+  String? token = await messaging.getToken();
+
+  if (kDebugMode) {
+    print('Registration Token=$token');
+  }
+
+
+  // TODO: Set up foreground message handler
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    if (kDebugMode) {
+      print('Handling a foreground message: ${message.messageId}');
+      print('Message data: ${message.data}');
+      print('Message notification: ${message.notification?.title}');
+      print('Message notification: ${message.notification?.body}');
+    }
+
+    _messageStreamController.sink.add(message);
+  });
+
+
+  // TODO: Set up background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(const MyApp());
 }
 
@@ -33,6 +101,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -106,7 +175,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage>{
   final GlobalKey<ChFavoriteBtnState> _favBtnKey = GlobalKey();
   final GlobalKey<ChCheeseSliderState> _cheeseSliderKey = GlobalKey();
 
@@ -120,6 +189,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late Map<String, String> user;
 
+  // TODO:
+
+  @override
+  void initState() {
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     fbDocs = widget.firebaseData.elementAt(0);
@@ -167,7 +242,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: Padding(
                           padding: EdgeInsets.all(25),
                           child: Center(
-                            child: Text('$i', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                            child: ListView(children: [Text('$i', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold), textAlign: TextAlign.center)]),
                           )
                       )
                   );

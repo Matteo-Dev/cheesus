@@ -42,6 +42,8 @@ dependencies:
   firebase_auth: ^4.2.10
   firebase_messaging: ^14.2.6
   collection: ^1.17.0
+  rxdart: ^0.27.7
+  http: ^0.13.5
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +73,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - images/cheesus.png
+    - assets/ca/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

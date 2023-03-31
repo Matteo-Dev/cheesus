@@ -2,8 +2,10 @@ import 'package:cheesus/CHBigButton.dart';
 import 'package:cheesus/FillerAvatar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import 'CHIconButton.dart';
 import 'main.dart';
@@ -125,6 +127,13 @@ class _ChatRouteState extends State<ChatRoute> {
                           "receiver": widget.user["partner"],
                           "creator": widget.user["username"]
                         });
+                        await http.post(
+                          Uri.parse("https://cheesus.mertz-es.de/sendTo"),
+                          body: '{"partner": "${widget.user["partner"]}", "title": "New Cheese!", "body": "Cheesus hat frischen Cheese für dich!"}',
+                            headers: {
+                              "Content-Type": "application/json"
+                            }
+                        );
                         // TODO: reassurance text for sending?
                       }
                     }, text: "Send")
