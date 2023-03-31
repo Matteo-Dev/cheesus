@@ -1,3 +1,4 @@
+import 'package:cheesus/CHBigButton.dart';
 import 'package:cheesus/LoginRoute.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,9 +7,10 @@ import 'package:flutter/material.dart';
 
 import 'CHIconButton.dart';
 import 'FillerAvatar.dart';
+import 'SentCheeseRoute.dart';
 
 class ProfileRoute extends StatelessWidget {
-  final Map<String, dynamic> user;
+  final Map<String, String> user;
 
   late final Future<List<int>> cheeseData;
 
@@ -88,18 +90,6 @@ class ProfileRoute extends StatelessWidget {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text("Gesendeter Cheese:", style: TextStyle(fontWeight: FontWeight.bold)),
-                                SizedBox(height: 5),
-                                Container(
-                                  padding: const EdgeInsets.all(15),
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: const BorderRadius.all(Radius.circular(50)),
-                                      border: Border.all(color: Colors.black, width: 3)
-                                  ),
-                                  child: Center(child: Text((snapshot.data?.elementAt(1) ?? 0).toString(), style: TextStyle(fontWeight: FontWeight.bold))),
-                                ),
-                                SizedBox(height: 10,),
                                 const Text("Empfangener Cheese:", style: TextStyle(fontWeight: FontWeight.bold)),
                                 SizedBox(height: 5),
                                 Container(
@@ -111,6 +101,36 @@ class ProfileRoute extends StatelessWidget {
                                   ),
                                   child: Center(child: Text((snapshot.data?.elementAt(0) ?? 0).toString(), style: TextStyle(fontWeight: FontWeight.bold))),
                                 ),
+                                SizedBox(height: 10,),
+                                const Text("Gesendeter Cheese:", style: TextStyle(fontWeight: FontWeight.bold)),
+                                SizedBox(height: 5),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(15),
+                                        decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: const BorderRadius.all(Radius.circular(50)),
+                                            border: Border.all(color: Colors.black, width: 3)
+                                        ),
+                                        child: Center(child: Text((snapshot.data?.elementAt(1) ?? 0).toString(), style: TextStyle(fontWeight: FontWeight.bold))),
+                                      ),
+                                    ),
+                                    SizedBox(width: 10,),
+                                    CHIconButton(
+                                      icon: Icons.outbox_outlined,
+                                      margin: 0,
+                                      primary: false,
+                                      onPressed: (){
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => SentCheeseRoute(user: user,)),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                )
                               ],
                             );
                           }

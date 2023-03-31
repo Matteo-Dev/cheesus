@@ -9,16 +9,16 @@ import 'package:flutter/material.dart';
 import 'CHIconButton.dart';
 import 'ChTag.dart';
 
-class HistoryRoute extends StatefulWidget {
+class SentCheeseRoute extends StatefulWidget {
   final Map<String, String> user;
 
-  const HistoryRoute({Key? key, required this.user}) : super(key: key);
+  const SentCheeseRoute({Key? key, required this.user}) : super(key: key);
 
   @override
-  State<HistoryRoute> createState() => _HistoryRouteState();
+  State<SentCheeseRoute> createState() => _SentCheeseRouteRouteState();
 }
 
-class _HistoryRouteState extends State<HistoryRoute> {
+class _SentCheeseRouteRouteState extends State<SentCheeseRoute> {
   Map<T, List<S>> groupBy<S, T>(Iterable<S> values, T Function(S) key) {
     var map = <T, List<S>>{};
     for (var element in values) {
@@ -52,7 +52,7 @@ class _HistoryRouteState extends State<HistoryRoute> {
         res.add(groupedByMonths[key]?.map((e) => e.data()).toList() ?? []);
       }
       if(res.isNotEmpty){
-        int lastCheckedMonthPrev = (currentData.isNotEmpty) ? (currentData.last.last["date-published"] as Timestamp).toDate().month : DateTime.now().month;
+        int lastCheckedMonthPrev = (currentData.last.last["date-published"] as Timestamp).toDate().month;
         int firstCheckedMonthNow = (res[0][0]["date-published"] as Timestamp).toDate().month;
         print(res);
         setState(() {
@@ -78,7 +78,7 @@ class _HistoryRouteState extends State<HistoryRoute> {
   @override
   void initState() {
     super.initState();
-    FirebaseFirestore.instance.collection("cheese").where("receiver", isEqualTo: widget.user["username"]).orderBy("date-published", descending: true).limit(10).get().then((data) {
+    FirebaseFirestore.instance.collection("cheese").where("creator", isEqualTo: widget.user["username"]).orderBy("date-published", descending: true).limit(10).get().then((data) {
       List<List<Map<String, dynamic>>> res = [];
       Map<int, List<QueryDocumentSnapshot<Map<String, dynamic>>>> groupedByMonths = groupBy(data.docs, (doc) {
         return doc.data()["date-published"].toDate().month as int;
@@ -162,9 +162,13 @@ class _HistoryRouteState extends State<HistoryRoute> {
                 CHIconButton(icon: Icons.arrow_back, onPressed: (){
                   Navigator.pop(context);
                 },),
-                const Text("Cheese History", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+                const Text("Sent Cheese", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
                 const FillerAvatar()
               ],
+            ),
+            const Padding(
+              padding: EdgeInsets.only(left: 40, right: 40, bottom: 20),
+              child: Text("Diese Filter beziehen sich auf die Wahl deines Cheese-Partners", style: TextStyle(fontWeight: FontWeight.bold),),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 40, right: 40, bottom: 20),
@@ -256,44 +260,4 @@ class _HistoryRouteState extends State<HistoryRoute> {
       return res;
     });
   }
-
-  /*
-  Future<List<List<Map<String, dynamic>>>> initialLoad() async {
-    List<List<Map<String, dynamic>>> res = [];
-    int month = (DateTime.now().month - 3) % 12;
-    List<int> checkedMonths = [month, (month+1)%12, (month+2)%12];
-    DateTime now = DateTime.now();
-
-    // initial request
-    await FirebaseFirestore.instance.collection(widget.user["username"] ?? "").where("type", isEqualTo: "RM").where("date-published", isGreaterThanOrEqualTo: DateTime(now.year, month)).get().then((value) {
-        Map<int, List<QueryDocumentSnapshot<Map<String, dynamic>>>> groupedByMonth = groupBy(value.docs, (doc) => (doc.data()["date-published"] as DateTime).month);
-        for(int key in groupedByMonth.keys){
-          res.add(groupedByMonth[key]?.map((e) => e.data()).toList() ?? []);
-        }
-    });
-
-
-
-    DateTime lastChecked = DateTime(now.year, month);
-
-    while(res.length < 3){
-      month = (month - 1) % 12;
-      checkedMonths.add(month);
-      if(checkedMonths.length == 12){
-        break;
-      }
-
-      await FirebaseFirestore.instance.collection(widget.user["username"] ?? "")
-          .where("type", isEqualTo: "RM")
-          .where("date-published", isLessThan: lastChecked)
-          .where("date-published", isGreaterThanOrEqualTo: DateTime(now.year, month))
-          .get().then((value) {
-
-          }
-      );
-      lastChecked = DateTime(now.year, month);
-    }
-
-    return res;
-  }*/
 }
