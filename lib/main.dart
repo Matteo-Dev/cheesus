@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -72,7 +73,6 @@ Future<void> main() async {
     print('Registration Token=$token');
   }
 
-
   // TODO: Set up foreground message handler
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     if (kDebugMode) {
@@ -84,6 +84,8 @@ Future<void> main() async {
 
     _messageStreamController.sink.add(message);
   });
+
+  FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(badge: true, alert: true, sound: true);
 
 
   // TODO: Set up background message handler
@@ -175,7 +177,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage>{
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver{
   final GlobalKey<ChFavoriteBtnState> _favBtnKey = GlobalKey();
   final GlobalKey<ChCheeseSliderState> _cheeseSliderKey = GlobalKey();
 
@@ -189,15 +191,74 @@ class _MyHomePageState extends State<MyHomePage>{
 
   late Map<String, String> user;
 
+  late Timer timer;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if(state.index == 1 || state.index == 2){
+      timer.cancel();
+    } else {
+      timer = Timer.periodic(Duration(seconds: 30), (Timer t) async {
+        DateTime now = DateTime.now();
+        List<Map<String, dynamic>> refreshedDocs = await FirebaseFirestore.instance.collection("cheese").where("receiver", isEqualTo: user["username"]).where("date-published", isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day)).get().then(
+              (event) {
+            List<Map<String, dynamic>> docs = [];
+            for(var doc in event.docs){
+              Map<String, dynamic> extDoc = {
+                ...doc.data(),
+                ...{"_id": doc.id}
+              };
+              docs.add(extDoc);
+            }
+            return docs.reversed.toList();
+          },
+          onError: (e) => print("Error getting document: $e"),
+        );
+        setState(() {
+          fbDocs = refreshedDocs;
+        });
+      });
+    }
+  }
+
   // TODO:
 
   @override
   void initState() {
+    fbDocs = widget.firebaseData.elementAt(0);
+    timer = Timer.periodic(Duration(seconds: 30), (Timer t) async {
+      DateTime now = DateTime.now();
+      List<Map<String, dynamic>> refreshedDocs = await FirebaseFirestore.instance.collection("cheese").where("receiver", isEqualTo: user["username"]).where("date-published", isGreaterThanOrEqualTo: DateTime(now.year, now.month, now.day)).get().then(
+            (event) {
+          List<Map<String, dynamic>> docs = [];
+          for(var doc in event.docs){
+            Map<String, dynamic> extDoc = {
+              ...doc.data(),
+              ...{"_id": doc.id}
+            };
+            docs.add(extDoc);
+          }
+          return docs.reversed.toList();
+        },
+        onError: (e) => print("Error getting document: $e"),
+      );
+      setState(() {
+        fbDocs = refreshedDocs;
+      });
+    });
     super.initState();
   }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    timer.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    fbDocs = widget.firebaseData.elementAt(0);
     user = widget.firebaseData.elementAt(1).elementAt(0).map((key, value) => MapEntry(key, value.toString()));
     partner = user["partner"] ?? "";
 
@@ -242,7 +303,9 @@ class _MyHomePageState extends State<MyHomePage>{
                       child: Padding(
                           padding: EdgeInsets.all(25),
                           child: Center(
-                            child: ListView(children: [Text('$i', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold), textAlign: TextAlign.center)]),
+                            child: SingleChildScrollView(
+                                child: Text('$i', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold), textAlign: TextAlign.center)
+                            ),
                           )
                       )
                   );
